@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'user',
-    'news'
+    'news',
 ]
 
 MIDDLEWARE = [
@@ -72,6 +72,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'pr1604.wsgi.application'
 
 AUTH_USER_MODEL = "user.User"
+
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
