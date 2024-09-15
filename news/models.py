@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import OneToOneField
 from django.utils.text import slugify
 
 User = get_user_model()
@@ -11,6 +12,9 @@ User = get_user_model()
 class Tag(models.Model):
     name = models.CharField(max_length=16, unique=True)
     description = models.TextField(blank=True, default="no description provided")
+
+    class Meta:
+        ordering = ['name', ]
 
     def __str__(self):
         return self.name
@@ -46,9 +50,10 @@ def __str__(self):
 
 def get_image_path(instance, filename=str, subfolder: Path = Path("pictures/")) -> Path:
     filename = (
-        f"{slugify(filename.partition('.')[0])}_{uuid4()}" + Path(filename).suffix
+            f"{slugify(filename.partition('.')[0])}_{uuid4()}" + Path(filename).suffix
     )
     return Path(subfolder) / filename
+
 
 class Picture(models.Model):
     image = models.ImageField(upload_to=get_image_path, unique=True)
@@ -61,8 +66,46 @@ class Picture(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=32, unique=True)
     description = models.TextField(blank=True, default="no description provided")
-    logo  = OneToOneField(Picture, on_delete=models.SET_NULL, null=True)
-    parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True)
+    logo = models.OneToOneField(Picture, on_delete=models.SET_NULL, null=True, blank=True)
+    parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = 'categories'
 
     def __str__(self):
         return self.name
+
+
+class Article(models.Model):
+    title = models.CharField(max_length=256)
+    text = models.TextField()
+    posted_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.RESTRICT)
+    picture = models.ManyToManyField(Picture, blank=True, related_name="articles")
+    tag = models.ManyToManyField(Tag)
+    reaction = models.ManyToManyField(Reaction, blank=True, related_name="articles")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    main_picture = models.OneToOneField(Picture, on_delete=models.SET_NULL, null=True, related_name="for_article_main")
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class Comment(models.Model):
+    text = models.TextField()
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    posted_by = models.ForeignKey(User, on_delete=models.RESTRICT)
+    parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment: {self.text}"
