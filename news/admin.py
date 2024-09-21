@@ -2,8 +2,8 @@ from django.contrib import admin
 from .models import Picture, Reaction, Tag, Category, Comment, Article
 
 
-class PictureInline(admin.TabularInline):
-    model = Picture
+# class PictureInline(admin.TabularInline):
+#     model = Picture
 
 
 # class LogoInline(admin.TabularInline):
@@ -14,8 +14,8 @@ class PictureInline(admin.TabularInline):
 #         verbose_name = "Logo"
 #
 
-class ArticleAdmin(admin.ModelAdmin):
-    inlines = [PictureInline]
+# class ArticleAdmin(admin.ModelAdmin):
+#     inlines = [PictureInline]
 
 
 #
@@ -29,5 +29,5 @@ admin.site.register(Reaction)
 admin.site.register(Tag)
 admin.site.register(Category)
 admin.site.register(Comment)
-admin.site.register(Article, ArticleAdmin)
+admin.site.register(Article)
 

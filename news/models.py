@@ -1,9 +1,9 @@
+from functools import reduce
 from pathlib import Path
 from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import OneToOneField
 from django.utils.text import slugify
 
 User = get_user_model()
@@ -13,11 +13,29 @@ class Tag(models.Model):
     name = models.CharField(max_length=16, unique=True)
     description = models.TextField(blank=True, default="no description provided")
 
-    class Meta:
-        ordering = ['name', ]
-
     def __str__(self):
         return self.name
+
+    def save(
+            self,
+            *args,
+            force_insert=False,
+            force_update=False,
+            using=None,
+            update_fields=None,
+    ):
+        name = reduce(lambda acc, x: acc + x if x.isalpha() else ' ', tuple(self.name))
+        name = "".join(
+            map(str.capitalize, name.split())
+        )
+        self.name = "#" + name
+        return super().save(
+            *args,
+            force_insert=force_insert,
+            force_update=force_update,
+            using=using,
+            update_fields=update_fields,
+        )
 
 
 class Reaction(models.Model):
@@ -43,9 +61,8 @@ class Reaction(models.Model):
     article = models.ForeignKey("news.Article", on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
-
-def __str__(self):
-    return self.emojy
+    def __str__(self):
+        return self.emojy
 
 
 def get_image_path(instance, filename=str, subfolder: Path = Path("pictures/")) -> Path:
@@ -69,10 +86,6 @@ class Category(models.Model):
     logo = models.OneToOneField(Picture, on_delete=models.SET_NULL, null=True, blank=True)
     parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True)
 
-    class Meta:
-        ordering = ['name']
-        verbose_name_plural = 'categories'
-
     def __str__(self):
         return self.name
 
@@ -80,17 +93,14 @@ class Category(models.Model):
 class Article(models.Model):
     title = models.CharField(max_length=256)
     text = models.TextField()
-    posted_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    posted_by = models.ForeignKey(User, on_delete=models.RESTRICT)
     category = models.ForeignKey(Category, on_delete=models.RESTRICT)
-    picture = models.ManyToManyField(Picture, blank=True, related_name="articles")
-    tag = models.ManyToManyField(Tag)
-    reaction = models.ManyToManyField(Reaction, blank=True, related_name="articles")
+    pictures = models.ManyToManyField(Picture, blank=True, related_name="articles")
+    tags = models.ManyToManyField(Tag, blank=True)
+    reactions = models.ManyToManyField(Reaction, blank=True, related_name="articles")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     main_picture = models.OneToOneField(Picture, on_delete=models.SET_NULL, null=True, related_name="for_article_main")
-
-    class Meta:
-        ordering = ['-created_at']
 
     def __str__(self):
         return self.title
@@ -103,9 +113,6 @@ class Comment(models.Model):
     parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['created_at']
 
     def __str__(self):
         return f"Comment: {self.text}"
