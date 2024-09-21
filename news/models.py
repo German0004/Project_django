@@ -25,9 +25,7 @@ class Tag(models.Model):
             update_fields=None,
     ):
         name = reduce(lambda acc, x: acc + x if x.isalpha() else ' ', tuple(self.name))
-        name = "".join(
-            map(str.capitalize, name.split())
-        )
+        name = "".join([world.capitalize() for world in name.split()])
         self.name = "#" + name
         return super().save(
             *args,
@@ -95,15 +93,12 @@ class Article(models.Model):
     text = models.TextField()
     posted_by = models.ForeignKey(User, on_delete=models.RESTRICT)
     category = models.ForeignKey(Category, on_delete=models.RESTRICT)
+    main_picture = models.OneToOneField(Picture, on_delete=models.SET_NULL, null=True, related_name="for_article")
     pictures = models.ManyToManyField(Picture, blank=True, related_name="articles")
     tags = models.ManyToManyField(Tag, blank=True)
     reactions = models.ManyToManyField(Reaction, blank=True, related_name="articles")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    main_picture = models.OneToOneField(Picture, on_delete=models.SET_NULL, null=True, related_name="for_article_main")
-
-    def __str__(self):
-        return self.title
 
 
 class Comment(models.Model):
